@@ -3,12 +3,11 @@
 
 [![Docker Stars](https://img.shields.io/docker/stars/jamesob/bitcoind.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jamesob/bitcoind.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
-[![ImageLayers Size](https://img.shields.io/imagelayers/image-size/jamesob/bitcoind/latest.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
-[![ImageLayers Layers](https://img.shields.io/imagelayers/layers/jamesob/bitcoind/latest.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
 
 *Running a full node ain't never been so easy!*
 
-A Docker configuration with sane defaults for running a full validating node.
+A Docker configuration with sane defaults for running a full validating 
+Bitcoin node.
 
 ## Quick start
 
@@ -27,6 +26,9 @@ $ docker run --name bitcoind -d \
    --p 8332:8332
    --publish 8333:8333
    jamesob/bitcoind
+
+$ docker logs -f bitcoind
+[ ... ]
 ```
 
 
