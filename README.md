@@ -23,7 +23,7 @@ $ docker run --name bitcoind -d \
    --env 'BTC_RPCUSER=foo' \
    --env 'BTC_RPCPASSWORD=password' \
    --volume /home/youruser/bitcoin_data:/bitcoin \
-   --p 8332:8332
+   -p 8332:8332
    --publish 8333:8333
    jamesob/bitcoind
 
