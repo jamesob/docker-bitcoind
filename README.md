@@ -1,5 +1,5 @@
 
-# docker-btc
+# docker-bitcoind
 
 [![Docker Stars](https://img.shields.io/docker/stars/jamesob/bitcoind.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jamesob/bitcoind.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
@@ -11,9 +11,7 @@ Bitcoin node.
 
 ## Quick start
 
-Requires that Docker be installed on the host machine:
-- Ubuntu: `sudo apt-get install docker`
-- otherwise: [docs](https://docs.docker.com/engine/installation/)
+Requires that [Docker be installed](https://docs.docker.com/engine/installation/) on the host machine.
 
 ```
 # Create some directory where your bitcoin data will be stored.
@@ -24,7 +22,7 @@ $ docker run --name bitcoind -d \
    --env 'BTC_RPCPASSWORD=password' \
    --env 'BTC_TXINDEX=1' \
    --volume /home/youruser/bitcoin_data:/bitcoin \
-   --p 8332:8332
+   -p 8332:8332
    --publish 8333:8333
    jamesob/bitcoind
 
