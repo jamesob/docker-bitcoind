@@ -48,7 +48,7 @@ EOF
 fi
 
 if [ $# -eq 0 ]; then
-  exec bitcoind -datadir=${BITCOIN_DIR} -conf=${BITCOIN_CONF} "$@"
+  exec bitcoind -datadir=${BITCOIN_DIR} -conf=${BITCOIN_CONF} "${BTC_RUN_ARGS}"
 else
   exec "$@"
 fi
