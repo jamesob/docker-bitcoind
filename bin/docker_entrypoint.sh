@@ -5,7 +5,7 @@ set -exuo pipefail
 BITCOIN_DIR=/bitcoin
 BITCOIN_CONF=${BITCOIN_DIR}/bitcoin.conf
 
-# If config doesn't exist, initialize with sane defaults for running a 
+# If config doesn't exist, initialize with sane defaults for running a
 # non-mining node.
 
 if [ ! -e "${BITCOIN_CONF}" ]; then
@@ -13,9 +13,9 @@ if [ ! -e "${BITCOIN_CONF}" ]; then
 
 # For documentation on the config file, see
 #
-# the bitcoin source: 
+# the bitcoin source:
 #   https://github.com/bitcoin/bitcoin/blob/master/contrib/debian/examples/bitcoin.conf
-# the wiki: 
+# the wiki:
 #   https://en.bitcoin.it/wiki/Running_Bitcoin
 
 # server=1 tells Bitcoin-Qt and bitcoind to accept JSON-RPC commands
@@ -26,7 +26,7 @@ rpcuser=${BTC_RPCUSER:-btc}
 rpcpassword=${BTC_RPCPASSWORD:-changemeplz}
 
 # How many seconds bitcoin will wait for a complete RPC HTTP request.
-# after the HTTP connection is established. 
+# after the HTTP connection is established.
 rpcclienttimeout=${BTC_RPCCLIENTTIMEOUT:-30}
 
 rpcallowip=${BTC_RPCALLOWIP:-::/0}
@@ -38,8 +38,12 @@ rpcport=${BTC_RPCPORT:-8332}
 # information.
 printtoconsole=${BTC_PRINTTOCONSOLE:-1}
 
-# We probably don't want to mine, and thus don't need a wallet.
-disablewallet=1
+# We probably don't want a wallet.
+disablewallet=${BTC_DISABLEWALLET:-1}
+
+# Enable an on-disk txn index. Allows use of getrawtransaction for txns not in
+# mempool.
+txindex=${BTC_TXINDEX:-0}
 EOF
 fi
 
