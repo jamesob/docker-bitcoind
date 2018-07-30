@@ -60,7 +60,10 @@ on environment variables passed to the container:
 
 ## Daemonizing
 
-If you're using systemd, you can use a config file like
+The smart thing to do if you're daemonizing is to use Docker's [builtin
+restart
+policies](https://docs.docker.com/config/containers/start-containers-automatically/#use-a-restart-policy),
+but if you're insistent on using systemd, you could do something like
 
 ```
 $ cat /etc/systemd/system/bitcoind.service
