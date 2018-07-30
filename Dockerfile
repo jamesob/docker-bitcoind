@@ -1,21 +1,35 @@
-FROM ubuntu:16.04
-MAINTAINER James O'Beirne <j@jameso.be>
+FROM alpine
+MAINTAINER James O'Beirne <james@chaincode.com>
 
-RUN apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 8842ce5e && \
-    echo "deb http://ppa.launchpad.net/bitcoin/bitcoin/ubuntu xenial main" \
-    > /etc/apt/sources.list.d/bitcoin.list
+ARG VERSION=0.16.1
+ARG GLIBC_VERSION=2.27-r0
 
-RUN apt-get update && \
-    apt-get install -y bitcoind && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+ENV FILENAME bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz
+ENV DOWNLOAD_URL https://bitcoin.org/bin/bitcoin-core-${VERSION}/${FILENAME}
 
-ENV HOME /bitcoin
+# Some of this was unabashadly yanked from
+# https://github.com/szyhf/DIDockerfiles/blob/master/bitcoin/alpine/Dockerfile
 
-ADD ./bin /usr/local/bin
-RUN chmod a+x /usr/local/bin/*
+RUN apk update \
+  && apk --no-cache add wget tar bash ca-certificates \
+  && wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://raw.githubusercontent.com/sgerrand/alpine-pkg-glibc/master/sgerrand.rsa.pub \
+  && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk \
+  && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk \
+  && apk --no-cache add glibc-${GLIBC_VERSION}.apk \
+  && apk --no-cache add glibc-bin-${GLIBC_VERSION}.apk \
+  && rm -rf /glibc-${GLIBC_VERSION}.apk \
+  && rm -rf /glibc-bin-${GLIBC_VERSION}.apk \
+  && wget $DOWNLOAD_URL \
+  && tar xzvf /bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz \
+  && mkdir /root/.bitcoin \
+  && mv /bitcoin-${VERSION}/bin/* /usr/local/bin/ \
+  && rm -rf /bitcoin-${VERSION}/ \
+  && rm -rf /bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz \
+  && apk del tar wget ca-certificates
 
-VOLUME ["/bitcoin"]
-EXPOSE 8332 8333
-WORKDIR /bitcoin
+EXPOSE 8332 8333 18332 18333 28332 28333
+
+ADD ./bin/docker_entrypoint.sh /usr/local/bin/docker_entrypoint.sh
+RUN chmod a+x /usr/local/bin/docker_entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/docker_entrypoint.sh"]

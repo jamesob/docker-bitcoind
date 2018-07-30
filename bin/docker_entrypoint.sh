@@ -1,15 +1,15 @@
 #!/bin/bash
 
-set -exuo pipefail
+set -euo pipefail
 
-BITCOIN_DIR=/bitcoin
+BITCOIN_DIR=/root/.bitcoin
 BITCOIN_CONF=${BITCOIN_DIR}/bitcoin.conf
 
 # If config doesn't exist, initialize with sane defaults for running a
 # non-mining node.
 
 if [ ! -e "${BITCOIN_CONF}" ]; then
-  cat >${BITCOIN_CONF} <<EOF
+  tee -a >${BITCOIN_CONF} <<EOF
 
 # For documentation on the config file, see
 #
@@ -44,11 +44,18 @@ disablewallet=${BTC_DISABLEWALLET:-1}
 # Enable an on-disk txn index. Allows use of getrawtransaction for txns not in
 # mempool.
 txindex=${BTC_TXINDEX:-0}
+testnet=${BTC_TESTNET:-0}
+dbcache=${BTC_DBCACHE:-512}
+zmqpubrawblock=${BTC_ZMQPUBRAWBLOCK:-tcp://0.0.0.0:28333}
+zmqpubrawtx=${BTC_ZMQPUBRAWTX:-tcp://0.0.0.0:28333}
+zmqpubhashtx=${BTC_ZMQPUBHASHTX:-tcp://0.0.0.0:28333}
+zmqpubhashblock=${BTC_ZMQPUBHASHBLOCK:-tcp://0.0.0.0:28333}
+
 EOF
 fi
 
 if [ $# -eq 0 ]; then
-  exec bitcoind -datadir=${BITCOIN_DIR} -conf=${BITCOIN_CONF} "${BTC_RUN_ARGS}"
+  exec bitcoind -datadir=${BITCOIN_DIR} -conf=${BITCOIN_CONF}
 else
   exec "$@"
 fi
