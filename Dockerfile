@@ -29,6 +29,7 @@ RUN apk update \
 
 EXPOSE 8332 8333 18332 18333 28332 28333
 
+ADD VERSION .
 ADD ./bin/docker_entrypoint.sh /usr/local/bin/docker_entrypoint.sh
 RUN chmod a+x /usr/local/bin/docker_entrypoint.sh
 
