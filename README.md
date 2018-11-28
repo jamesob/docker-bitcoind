@@ -26,7 +26,7 @@ $ docker run --name bitcoind -d \
    --env 'BTC_RPCPASSWORD=password' \
    --env 'BTC_TXINDEX=1' \
    --volume /home/youruser/bitcoin_data:/root/.bitcoin \
-   -p 8332:8332 \
+   -p 127.0.0.1:8332:8332 \
    --publish 8333:8333 \
    jamesob/bitcoind
 
@@ -81,7 +81,7 @@ ExecStartPre=/usr/bin/docker pull jamesob/bitcoind
 ExecStart=/usr/bin/docker run \
     --name bitcoind \
     -p 8333:8333 \
-    -p 8332:8332 \
+    -p 127.0.0.1:8332:8332 \
     -v /data/bitcoind:/root/.bitcoin \
     jamesob/bitcoind
 ExecStop=/usr/bin/docker stop bitcoind
