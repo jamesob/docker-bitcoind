@@ -94,5 +94,3 @@ to ensure that bitcoind continues to run.
 
 - [docker-bitcoind](https://github.com/kylemanna/docker-bitcoind): sort of the
   basis for this repo, but configuration is a bit more confusing.
-- [docker-bitcoin](https://github.com/amacneil/docker-bitcoin): more complex, but
-  more granular versioning. Includes XT & classic.
