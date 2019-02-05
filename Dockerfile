@@ -1,5 +1,5 @@
 FROM alpine
-MAINTAINER James O'Beirne <james@chaincode.com>
+LABEL MAINTAINER="James O'Beirne <james@chaincode.com>"
 
 ARG VERSION=0.16.1
 ARG GLIBC_VERSION=2.27-r0
