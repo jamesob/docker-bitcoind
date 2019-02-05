@@ -15,9 +15,9 @@ fixed.
 
 ## Quick start
 
-Requires that [Docker be installed](https://docs.docker.com/engine/installation/) on the host machine.
+Requires that [Docker be installed](https://docs.docker.com/install/) on the host machine.
 
-```
+```bash
 # Create some directory where your bitcoin data will be stored.
 $ mkdir /home/youruser/bitcoin_data
 
@@ -65,7 +65,7 @@ restart
 policies](https://docs.docker.com/config/containers/start-containers-automatically/#use-a-restart-policy),
 but if you're insistent on using systemd, you could do something like
 
-```
+```bash
 $ cat /etc/systemd/system/bitcoind.service
 
 # bitcoind.service #######################################################################
