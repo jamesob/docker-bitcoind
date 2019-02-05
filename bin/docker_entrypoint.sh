@@ -14,7 +14,7 @@ if [ ! -e "${BITCOIN_CONF}" ]; then
 # For documentation on the config file, see
 #
 # the bitcoin source:
-#   https://github.com/bitcoin/bitcoin/blob/master/contrib/debian/examples/bitcoin.conf
+#   https://github.com/bitcoin/bitcoin/blob/master/share/examples/bitcoin.conf
 # the wiki:
 #   https://en.bitcoin.it/wiki/Running_Bitcoin
 
@@ -44,8 +44,14 @@ disablewallet=${BTC_DISABLEWALLET:-1}
 # Enable an on-disk txn index. Allows use of getrawtransaction for txns not in
 # mempool.
 txindex=${BTC_TXINDEX:-0}
+
+# Run on the test network instead of the real bitcoin network.
 testnet=${BTC_TESTNET:-0}
+
+# Set database cache size in MiB
 dbcache=${BTC_DBCACHE:-512}
+
+# ZeroMQ notification options:
 zmqpubrawblock=${BTC_ZMQPUBRAWBLOCK:-tcp://0.0.0.0:28333}
 zmqpubrawtx=${BTC_ZMQPUBRAWTX:-tcp://0.0.0.0:28333}
 zmqpubhashtx=${BTC_ZMQPUBHASHTX:-tcp://0.0.0.0:28333}
