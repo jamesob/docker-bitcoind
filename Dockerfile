@@ -2,7 +2,7 @@ FROM alpine
 LABEL MAINTAINER="James O'Beirne <james@chaincode.com>"
 
 ARG VERSION=0.17.1
-ARG GLIBC_VERSION=2.28-r0
+ARG GLIBC_VERSION=2.29-r0
 
 ENV FILENAME bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz
 ENV DOWNLOAD_URL https://bitcoin.org/bin/bitcoin-core-${VERSION}/${FILENAME}
