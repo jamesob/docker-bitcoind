@@ -27,6 +27,8 @@ RUN apk update \
   && rm -rf /bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz \
   && apk del tar wget ca-certificates
 
+RUN ip -4 route list match 0/0 | awk '{print $3 "host.docker.internal"}' >> /etc/hosts
+
 EXPOSE 8332 8333 18332 18333 28332 28333
 
 ADD VERSION .
