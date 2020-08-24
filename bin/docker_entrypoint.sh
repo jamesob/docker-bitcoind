@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+ip -4 route list match 0/0 | awk '{print $3 "\thost.docker.internal"}' >> /etc/hosts
+
 BITCOIN_DIR=/root/.bitcoin
 BITCOIN_CONF=${BITCOIN_DIR}/bitcoin.conf
 
