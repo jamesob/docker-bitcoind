@@ -2,10 +2,13 @@
 
 set -euo pipefail
 
-ip -4 route list match 0/0 | awk '{print $3 "\thost.docker.internal"}' >> /etc/hosts
+export PATH=/usr/local/bin:$PATH
 
-BITCOIN_DIR=/root/.bitcoin
-BITCOIN_CONF=${BITCOIN_DIR}/bitcoin.conf
+# See https://github.com/jamesob/docker-bitcoind/pull/16
+sudo /usr/bin/append-to-hosts "$(ip -4 route list match 0/0 | awk '{print $3 "\thost.docker.internal"}')"
+
+BITCOIN_DIR=/bitcoin/data
+BITCOIN_CONF=/bitcoin/bitcoin.conf
 
 # If config doesn't exist, initialize with sane defaults for running a
 # non-mining node.
@@ -59,6 +62,21 @@ zmqpubrawtx=${BTC_ZMQPUBRAWTX:-tcp://0.0.0.0:28333}
 zmqpubhashtx=${BTC_ZMQPUBHASHTX:-tcp://0.0.0.0:28333}
 zmqpubhashblock=${BTC_ZMQPUBHASHBLOCK:-tcp://0.0.0.0:28333}
 
+# [Sections]
+# Most options apply to mainnet, testnet and regtest.
+# If you want to confine an option to just one network, you should add it in the
+# relevant section below.
+# EXCEPTIONS: The options addnode, connect, port, bind, rpcport, rpcbind and wallet
+# only apply to mainnet unless they appear in the appropriate section below.
+
+# Options only for mainnet
+[main]
+
+# Options only for testnet
+[test]
+
+# Options only for regtest
+[regtest]
 EOF
 fi
 

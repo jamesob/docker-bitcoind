@@ -5,40 +5,88 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/jamesob/bitcoind.svg)](https://hub.docker.com/r/jamesob/bitcoind/)
 
 A Docker configuration with sane defaults for running a fully-validating
-Bitcoin node, based on [Alpine Linux](https://alpinelinux.org/).
+Bitcoin node. Binaries are retrieved from bitcoincore.org and verified for integrity
+based on [the process described here](https://bitcoincore.org/en/download/).
 
-**Warning:** older versions of this Dockerfile were based on Ubuntu and
-included all build dependencies, but due to the ridiculous size of the
-resulting image I've moved to binaries downloaded to Alpine Linux. If I've
-screwed up your development workflow somehow, file an issue and we'll get it
-fixed.
+## Tags available
+
+- 0.13.0
+- 0.13.1
+- 0.13.2
+- 0.14.3
+- 0.15.2
+- 0.16.3
+- 0.17.0
+- 0.17.0.1
+- 0.17.1
+- 0.17.2
+- 0.18.0
+- 0.18.1
+- 0.19.0
+- 0.19.1
+- 0.20.0
+- 0.20.1 (latest)
 
 ## Quick start
 
 Requires that [Docker be installed](https://docs.docker.com/install/) on the host machine.
 
-```bash
+```sh
 # Create some directory where your bitcoin data will be stored.
 $ mkdir /home/youruser/bitcoin_data
 
 $ docker run --name bitcoind -d \
-   --env 'BTC_RPCUSER=foo' \
-   --env 'BTC_RPCPASSWORD=password' \
-   --env 'BTC_TXINDEX=1' \
-   --volume /home/youruser/bitcoin_data:/root/.bitcoin \
+   -e 'BTC_RPCUSER=foo' \
+   -e 'BTC_RPCPASSWORD=password' \
+   -e 'BTC_TXINDEX=1' \
+   -v /home/youruser/bitcoin_data:/bitcoin/data \
    -p 127.0.0.1:8332:8332 \
    --publish 8333:8333 \
-   jamesob/bitcoind
+   jamesob/bitcoind:0.20.1
 
 $ docker logs -f bitcoind
 [ ... ]
 ```
 
+If you want to use a preexisting data directory and your own config file, run
+
+```sh
+$ docker run --name jamesob/bitcoind:0.20.1 -d \
+   -v /home/youruser/bitcoin_data:/bitcoin/data \
+   -v /home/youruser/bitcoin.conf:/bitcoin/bitcoin.conf \
+   -p 127.0.0.1:8332:8332 \
+   --publish 8333:8333 \
+   jamesob/bitcoind:0.20.1
+```
+
+### Building yourself
+
+By default, the container runs under UID,GID=1000 to avoid executing as a privileged
+user. If you want to rebuild the container with different settings, you can do so:
+
+```
+$ git clone https://github.com/jamesob/docker-bitcoind
+$ cd docker-bitcoind
+$ docker build -t $YOUR_USER/bitcoind:$SOME_VERSION \
+   --build-arg UID=$(id -u) \
+   --build-arg GID=$(id -g) \
+   --build-arg VERSION=$SOME_VERSION \
+   .
+```
+
+## Possible volume mounts
+
+| Path | Description |
+| ---- | ------- |
+| `/bitcoin/data` | Bitcoin's data directory |
+| `/bitcoin/bitcoin.conf` | Bitcoin's configuration file |
+
+
 
 ## Configuration
 
-A custom `bitcoin.conf` file can be placed in the mounted data directory.
-Otherwise, a default `bitcoin.conf` file will be automatically generated based
+A custom `bitcoin.conf` file can be placed at `/bitcoin.conf`.
+Otherwise, a default will be automatically generated based
 on environment variables passed to the container:
 
 | name | default |
@@ -94,3 +142,5 @@ to ensure that bitcoind continues to run.
 
 - [docker-bitcoind](https://github.com/kylemanna/docker-bitcoind): sort of the
   basis for this repo, but configuration is a bit more confusing.
+- [wwcr/bitcoin-core](https://hub.docker.com/r/wwcr/bitcoin-core/dockerfile): trustworthy
+  and simple.
