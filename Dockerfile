@@ -1,36 +1,47 @@
-FROM alpine
-LABEL MAINTAINER="James O'Beirne <james@chaincode.com>"
+FROM buildpack-deps:buster-curl as builder
+LABEL MAINTAINER="James O'Beirne <mail@jameso.be>"
 
-ARG VERSION=0.17.1
-ARG GLIBC_VERSION=2.29-r0
+# This buildarg can be set during container build time with --build-arg VERSION=[version]
+ARG VERSION=0.20.1
 
-ENV FILENAME bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz
-ENV DOWNLOAD_URL https://bitcoin.org/bin/bitcoin-core-${VERSION}/${FILENAME}
+RUN apt-get update && \
+  apt-get install -y gnupg2 curl && \
+  rm -rf /var/lib/apt/lists/*
 
-# Some of this was unabashadly yanked from
-# https://github.com/szyhf/DIDockerfiles/blob/master/bitcoin/alpine/Dockerfile
+COPY ./bin/get-bitcoin.sh /usr/bin/
+RUN chmod +x /usr/bin/get-bitcoin.sh && mkdir /root/bitcoin && get-bitcoin.sh $VERSION /root/bitcoin/
 
-RUN apk update \
-  && apk --no-cache add wget tar bash ca-certificates \
-  && wget -q -O /etc/apk/keys/sgerrand.rsa.pub https://alpine-pkgs.sgerrand.com/sgerrand.rsa.pub \
-  && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-${GLIBC_VERSION}.apk \
-  && wget https://github.com/sgerrand/alpine-pkg-glibc/releases/download/${GLIBC_VERSION}/glibc-bin-${GLIBC_VERSION}.apk \
-  && apk --no-cache add glibc-${GLIBC_VERSION}.apk \
-  && apk --no-cache add glibc-bin-${GLIBC_VERSION}.apk \
-  && rm -rf /glibc-${GLIBC_VERSION}.apk \
-  && rm -rf /glibc-bin-${GLIBC_VERSION}.apk \
-  && wget $DOWNLOAD_URL \
-  && tar xzvf /bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz \
-  && mkdir /root/.bitcoin \
-  && mv /bitcoin-${VERSION}/bin/* /usr/local/bin/ \
-  && rm -rf /bitcoin-${VERSION}/ \
-  && rm -rf /bitcoin-${VERSION}-x86_64-linux-gnu.tar.gz \
-  && apk del tar wget ca-certificates
+
+FROM debian:buster-slim
+
+# Run bitcoin as a non-privileged user to avoid permissions issues with volume mounts,
+# amount other things.
+#
+# These buildargs can be set during container build time with --build-arg UID=[uid]
+ARG UID=1000
+ARG GID=1000
+ARG USERNAME=user
+
+RUN apt-get update && \
+  apt-get install -y iproute2 sudo && \
+  rm -rf /var/lib/apt/lists/*
+
+# Workaround to address https://github.com/jamesob/docker-bitcoind/pull/16 while
+# still not running as root user.
+COPY ./bin/append-to-hosts.sh /usr/bin/append-to-hosts
+RUN chmod +x /usr/bin/append-to-hosts
+
+# Allow the new user write access to /etc/hosts for the fix in `entrypoint.sh`.
+RUN groupadd -g $GID -o $USERNAME && \
+  useradd -m -u $UID -g $GID -o -d /home/$USERNAME -s /bin/bash $USERNAME && \
+  echo "$USERNAME    ALL=(ALL:ALL) NOPASSWD: /usr/bin/append-to-hosts" | tee -a /etc/sudoers
+
+COPY --from=builder /root/bitcoin/ /usr/local/
+COPY ./entrypoint.sh /usr/local/entrypoint.sh
+RUN chmod a+rx /usr/local/entrypoint.sh && mkdir /bitcoin && chown $USERNAME /bitcoin
+
+USER $USERNAME
 
 EXPOSE 8332 8333 18332 18333 28332 28333
 
-ADD VERSION .
-ADD ./bin/docker_entrypoint.sh /usr/local/bin/docker_entrypoint.sh
-RUN chmod a+x /usr/local/bin/docker_entrypoint.sh
-
-ENTRYPOINT ["/usr/local/bin/docker_entrypoint.sh"]
+ENTRYPOINT ["/usr/local/entrypoint.sh"]
