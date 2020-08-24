@@ -10,6 +10,16 @@ based on [the process described here](https://bitcoincore.org/en/download/).
 
 ## Tags available
 
+- 0.13.0
+- 0.13.1
+- 0.13.2
+- 0.14.3
+- 0.15.2
+- 0.16.3
+- 0.17.0
+- 0.17.0.1
+- 0.17.1
+- 0.17.2
 - 0.18.0
 - 0.18.1
 - 0.19.0
