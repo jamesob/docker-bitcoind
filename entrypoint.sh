@@ -80,7 +80,10 @@ zmqpubhashblock=${BTC_ZMQPUBHASHBLOCK:-tcp://0.0.0.0:28333}
 # Options only for regtest
 [regtest]
 EOF
+echo "Created new configuration at ${BITCOIN_CONF}"
 fi
+
+chmod 0600 "${BITCOIN_CONF}"
 
 if [ $# -eq 0 ]; then
   exec bitcoind -datadir=${BITCOIN_DIR} -conf=${BITCOIN_CONF}
