@@ -10,7 +10,7 @@ sudo /usr/bin/append-to-hosts "$(ip -4 route list match 0/0 | awk '{print $3 "\t
 BITCOIN_DIR=/bitcoin/data
 BITCOIN_CONF=/bitcoin/bitcoin.conf
 
-umask 022
+umask 077
 
 # If config doesn't exist, initialize with sane defaults for running a
 # non-mining node.
