@@ -8,6 +8,18 @@ A Docker configuration with sane defaults for running a fully-validating
 Bitcoin node. Binaries are retrieved from bitcoincore.org and verified for integrity
 based on [the process described here](https://bitcoincore.org/en/download/).
 
+## **Warning**: don't trust the Docker registry
+
+References on the Docker registry (https://hub.docker.com) are mutable. A malicious
+actor could change any images hosted there without you realizing it.
+
+If you use an image served by the Docker registry, ensure that you retrieve
+it by its content hash, [as detailed here](https://stackoverflow.com/a/40730725).
+Or just build these images yourself.
+
+With most software this doesn't matter too much, but running an authentic copy of
+Bitcoin Core is really important!
+
 ## Tags available
 
 - 0.13.0
