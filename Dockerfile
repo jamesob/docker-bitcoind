@@ -9,7 +9,9 @@ RUN apt-get update && \
   rm -rf /var/lib/apt/lists/*
 
 COPY ./bin/get-bitcoin.sh /usr/bin/
-RUN chmod +x /usr/bin/get-bitcoin.sh && mkdir /root/bitcoin && get-bitcoin.sh $VERSION /root/bitcoin/
+RUN chmod +x /usr/bin/get-bitcoin.sh && \
+  mkdir /root/bitcoin && \
+  get-bitcoin.sh $VERSION /root/bitcoin/
 
 
 FROM debian:buster-slim
@@ -38,7 +40,9 @@ RUN groupadd -g $GID -o $USERNAME && \
 
 COPY --from=builder /root/bitcoin/ /usr/local/
 COPY ./entrypoint.sh /usr/local/entrypoint.sh
-RUN chmod a+rx /usr/local/entrypoint.sh && mkdir /bitcoin && chown $USERNAME /bitcoin
+RUN chmod a+rx /usr/local/entrypoint.sh && \
+  mkdir -p /bitcoin/data && \
+  chown -R $USERNAME:$GID /bitcoin
 
 USER $USERNAME
 

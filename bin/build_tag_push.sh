@@ -11,6 +11,6 @@ for ver in $VERSIONS; do
   echo
   echo
   docker build -t "jamesob/bitcoind:${ver}" --build-arg "VERSION=${ver}" .
-  # read -p "Push? (y/N): " confirm && [[ $confirm == [yY] ]] && \
+  read -p "Push? (y/N): " confirm && [[ $confirm == [yY] ]] && \
   docker push "jamesob/bitcoind:${ver}"
 done
