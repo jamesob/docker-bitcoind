@@ -148,11 +148,3 @@ ExecStop=/usr/bin/docker stop bitcoind
 ```
 
 to ensure that bitcoind continues to run.
-
-
-## Alternatives
-
-- [docker-bitcoind](https://github.com/kylemanna/docker-bitcoind): sort of the
-  basis for this repo, but configuration is a bit more confusing.
-- [wwcr/bitcoin-core](https://hub.docker.com/r/wwcr/bitcoin-core/dockerfile): trustworthy
-  and simple.
