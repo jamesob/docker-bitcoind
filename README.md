@@ -43,22 +43,36 @@ Bitcoin Core is really important!
 
 Requires that [Docker be installed](https://docs.docker.com/install/) on the host machine.
 
+### Autogenerating a config
+
 ```sh
 # Create some directory where your bitcoin data will be stored.
 $ mkdir /home/youruser/bitcoin_data
 
+$ $EDITOR envfile
+BTC_RPCPASSWORD=your_password
+
 $ docker run --name bitcoind -d \
    -e 'BTC_RPCUSER=foo' \
-   -e 'BTC_RPCPASSWORD=password' \
    -e 'BTC_TXINDEX=1' \
+   --env-file envfile \
    -v /home/youruser/bitcoin_data:/bitcoin/data \
    -p 127.0.0.1:8332:8332 \
-   --publish 8333:8333 \
+   -p 8333:8333 \
    jamesob/bitcoind:0.20.1
 
 $ docker logs -f bitcoind
 [ ... ]
 ```
+
+**Warning**: if you specify your RPC password without using an envfile, it may
+be captured in your shell history. Use an envfile if you are going to use
+`BTC_RPCPASSWORD`.
+
+If you want the RPC port to be accessible to remote hosts, remove the `127.0.0.1` from
+the `-p ...8332` line.
+
+### Using your own config/datadir
 
 If you want to use a preexisting data directory and your own config file, run
 
@@ -67,7 +81,7 @@ $ docker run --name jamesob/bitcoind:0.20.1 -d \
    -v /home/youruser/bitcoin_data:/bitcoin/data \
    -v /home/youruser/bitcoin.conf:/bitcoin/bitcoin.conf \
    -p 127.0.0.1:8332:8332 \
-   --publish 8333:8333 \
+   -p 8333:8333 \
    jamesob/bitcoind:0.20.1
 ```
 
@@ -104,7 +118,7 @@ on environment variables passed to the container:
 | name | default |
 | ---- | ------- |
 | BTC_RPCUSER | btc |
-| BTC_RPCPASSWORD | changemeplz |
+| BTC_RPCPASSWORD | <randomly generated> |
 | BTC_RPCPORT | 8332 |
 | BTC_RPCALLOWIP | ::/0 |
 | BTC_RPCCLIENTTIMEOUT | 30 |
@@ -120,10 +134,10 @@ on environment variables passed to the container:
 
 ## Daemonizing
 
-The smart thing to do if you're daemonizing is to use Docker's [builtin
-restart
-policies](https://docs.docker.com/config/containers/start-containers-automatically/#use-a-restart-policy),
-but if you're insistent on using systemd, you could do something like
+The smart thing to do if you're daemonizing is to use Docker's [builtin restart
+policies](https://docs.docker.com/config/containers/start-containers-automatically/#use-a-restart-policy)
+(i.e. `docker run --restart unless-stopped ...`), but if you're insistent on using
+systemd, you could do something like
 
 ```bash
 $ cat /etc/systemd/system/bitcoind.service

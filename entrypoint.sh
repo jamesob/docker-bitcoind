@@ -10,6 +10,11 @@ sudo /usr/bin/append-to-hosts "$(ip -4 route list match 0/0 | awk '{print $3 "\t
 BITCOIN_DIR=/bitcoin/data
 BITCOIN_CONF=/bitcoin/bitcoin.conf
 
+if [ -z "${BTC_RPCPASSWORD:-}" ]; then
+  # Provide a random password.
+  BTC_RPCPASSWORD=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 24 ; echo '')
+fi
+
 umask 077
 
 # If config doesn't exist, initialize with sane defaults for running a
@@ -30,7 +35,7 @@ server=1
 
 # You must set rpcuser and rpcpassword to secure the JSON-RPC api
 rpcuser=${BTC_RPCUSER:-btc}
-rpcpassword=${BTC_RPCPASSWORD:-changemeplz}
+rpcpassword=${BTC_RPCPASSWORD}
 
 # How many seconds bitcoin will wait for a complete RPC HTTP request.
 # after the HTTP connection is established.
