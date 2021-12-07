@@ -70,7 +70,7 @@ be captured in your shell history. Use an envfile if you are going to use
 `BTC_RPCPASSWORD`.
 
 If you want the RPC port to be accessible to remote hosts, remove the `127.0.0.1` from
-the `-p ...8332` line.
+the `-p ...8332` line and set `BTC_RPCBIND=0.0.0.0`.
 
 ### Using your own config/datadir
 
@@ -120,6 +120,7 @@ on environment variables passed to the container:
 | BTC_RPCUSER | btc |
 | BTC_RPCPASSWORD | <randomly generated> |
 | BTC_RPCPORT | 8332 |
+| BTC_RPCBIND | 127.0.0.1 |
 | BTC_RPCALLOWIP | ::/0 |
 | BTC_RPCCLIENTTIMEOUT | 30 |
 | BTC_DISABLEWALLET | 1 |

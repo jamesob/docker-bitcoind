@@ -46,6 +46,10 @@ rpcallowip=${BTC_RPCALLOWIP:-::/0}
 # Listen for RPC connections on this TCP port:
 rpcport=${BTC_RPCPORT:-8332}
 
+# Bind to given address to listen for JSON-RPC connections.
+# Refer to the manpage or bitcoind -help for further details.
+rpcbind=${BTC_RPCBIND:-127.0.0.1}
+
 # Print to console (stdout) so that "docker logs bitcoind" prints useful
 # information.
 printtoconsole=${BTC_PRINTTOCONSOLE:-1}
