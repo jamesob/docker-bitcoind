@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 # For debugging:
 # set -x
 
@@ -73,21 +73,46 @@ cd "$TMPDIR"
 curl -O "${URL_BASE}/SHA256SUMS.asc"
 curl -O "${URL_BASE}/${FILENAME}"
 
-if [[ "$VERSION" == "0."* ]]; then
+# In version 22.0, release signing changed from a single key signing in 
+# SHA256SUMS.asc to multiple keys signing SHA256SUMS. 
+#
+# See here for more information: https://github.com/bitcoin/bitcoin/pull/23020
+
+if [[ "$VERSION" < "22.0" ]]; then
   gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 01EA5486DE18A882D4C2684590C8019E36C2E964
   sha256sum --ignore-missing --check SHA256SUMS.asc \
     | tee - | grep -o "${FILENAME}: OK"
   gpg --verify SHA256SUMS.asc >gpg_verify_out 2>&1
   grep '^gpg: Good signature from "Wladimir J. van der Laan' gpg_verify_out
   grep '^Primary key fingerprint: 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964' gpg_verify_out
+
 else
+  # See bitcoin/contrib/builder-keys/keys.txt for current values.
+  #
+  # I've chosen a subset of builder keys here who are well-known and reliably 
+  # sign for releases.
+
+  # Wladimir
   gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 71A3B16735405025D447E8F274810B012346C9A6
+  # Hebasto
+  gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys D1DBF2C4B96F2DEBF4C16654410108112E7EA81F
+  # Fanquake
+  gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys E777299FC265DD04793070EB944D35F9AC3DB76A
+
   curl -O "${URL_BASE}/SHA256SUMS"
-  sha256sum --ignore-missing --check SHA256SUMS \
-    | tee - | grep -o "${FILENAME}: OK"
   gpg --verify SHA256SUMS.asc SHA256SUMS >gpg_verify_out 2>&1 || true
+  cat gpg_verify_out
+
   grep '^gpg: Good signature from "Wladimir J. van der Laan' gpg_verify_out
   grep '^Primary key fingerprint: 71A3 B167 3540 5025 D447  E8F2 7481 0B01 2346 C9A6' gpg_verify_out
+
+  grep '^gpg: Good signature from "Hennadii Stepanov' gpg_verify_out
+  grep '^Primary key fingerprint: D1DB F2C4 B96F 2DEB F4C1  6654 4101 0811 2E7E A81F' gpg_verify_out
+
+  grep '^gpg: Good signature from "Michael Ford' gpg_verify_out
+  grep '^Primary key fingerprint: E777 299F C265 DD04 7930  70EB 944D 35F9 AC3D B76A' gpg_verify_out
+
+  sha256sum --ignore-missing --check SHA256SUMS | tee - | grep -o "${FILENAME}: OK"
 fi
 
 tar -xzvf "${FILENAME}"
