@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -e
 # For debugging:
 # set -x
 
@@ -62,6 +62,8 @@ if [ -z "${VERSION}" ]; then
   err
   exit 1
 fi
+
+set -x
 
 TMPDIR=$(mktemp -d)
 cd "$TMPDIR"
