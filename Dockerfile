@@ -1,5 +1,5 @@
 FROM buildpack-deps:buster-curl as builder
-LABEL MAINTAINER="James O'Beirne <mail@jameso.be>"
+LABEL MAINTAINER="James O'Beirne <wild-dockerbitcoind@au92.org>"
 
 # This buildarg can be set during container build time with --build-arg VERSION=[version]
 ARG VERSION=0.20.1
