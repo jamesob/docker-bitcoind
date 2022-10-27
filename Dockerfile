@@ -6,21 +6,6 @@ LABEL MAINTAINER="James O'Beirne <wild-dockerbitcoind@au92.org>"
 
 # Can be "release" or "git"
 ARG SOURCE=
-# If SOURCE is git, this should be blank.
-ARG VERSION=
-
-ARG GIT_REF=
-ARG GIT_SHA=
-ARG GIT_REPO_URL=
-ARG CONFIGURE_ARGS=
-
-LABEL "bitcoin-source"=$SOURCE
-LABEL "bitcoin-version"=$VERSION
-LABEL "bitcoin-configure-args"="$CONFIGURE_ARGS"
-LABEL "git-ref"=${GIT_REF}
-LABEL "git-sha"=${GIT_SHA}
-LABEL "git-repo-url"=${GIT_REPO_URL}
-
 ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && \
@@ -35,6 +20,18 @@ RUN if [ "${SOURCE}" = "git" ] ; then apt-get update && \
     systemtap-sdt-dev libzmq3-dev g++ && \
   rm -rf /var/lib/apt/lists/* ; fi
 
+ARG VERSION=
+ARG GIT_REF=
+ARG GIT_SHA=
+ARG GIT_REPO_URL=
+ARG CONFIGURE_ARGS=
+
+LABEL "bitcoin-source"=$SOURCE
+LABEL "bitcoin-version"=$VERSION
+LABEL "bitcoin-configure-args"="$CONFIGURE_ARGS"
+LABEL "git-ref"=${GIT_REF}
+LABEL "git-sha"=${GIT_SHA}
+LABEL "git-repo-url"=${GIT_REPO_URL}
 
 COPY ./bin/get-bitcoin /usr/bin/
 RUN chmod +x /usr/bin/get-bitcoin && \

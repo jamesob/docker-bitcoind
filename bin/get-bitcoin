@@ -132,13 +132,16 @@ def from_release(version: str, install_prefix: str):
         )
 
     sh(f"tar -xzvf {FILENAME}")
-    dir = sh("find . -name 'bitcoin-*' -type d | head -n 1", capture_output=True).stdout.strip()
+    dir = sh(
+        "find . -name 'bitcoin-*' -type d | head -n 1", capture_output=True
+    ).stdout.strip()
     sh(f"ls -lah {dir}")
     sh(f"rm {dir}/bin/bitcoin-qt")
     sh(f"cp -r {dir}/* {install_prefix}")
 
     print("\nBitcoin installed:\n")
     sh(f"{install_prefix}/bin/bitcoind --version")
+
 
 
 def from_git(
@@ -183,7 +186,7 @@ def getparser():
     ao("--git-ref", help="if obtaining from git, which tag/branch to build", default="")
     ao("--git-sha", help="if obtaining from git, which commit to build", default="")
     ao("--git-repo-url", default="https://github.com/bitcoin/bitcoin")
-    ao("--configure-args", help="pass additiona ./configure args", default="")
+    ao("--configure-args", help=f"pass replacement ./configure args")
 
     return ap
 

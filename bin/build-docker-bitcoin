@@ -17,11 +17,18 @@ DEFAULT_REPO_PATH = Path.home() / "src" / "bitcoin-reference"
 REPO_URL = "https://github.com/bitcoin/bitcoin"
 DOCKER_USERNAME = "jamesob"
 
+# From https://github.com/bitcoin/bitcoin/blob/master/contrib/guix/libexec/build.sh
+DEFAULT_CONFIG_ARGS = (
+    "--enable-reduce-exports --disable-bench --disable-gui-tests --disable-fuzz-binary "
+    "--disable-ccache --disable-maintainer-mode --disable-dependency-tracking "
+    "CFLAGS='-O2 -g'"
+)
+
 
 @cli.main
 def main(
     git_ref: str,
-    configure_args: str = '',
+    configure_args: str = DEFAULT_CONFIG_ARGS,
     docker_username: str = DOCKER_USERNAME,
     repo_path: str = str(DEFAULT_REPO_PATH),  # type: ignore
     push: bool = False,
