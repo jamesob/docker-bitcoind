@@ -12,9 +12,11 @@ ARG VERSION=
 ARG GIT_REF=
 ARG GIT_SHA=
 ARG GIT_REPO_URL=
+ARG CONFIGURE_ARGS=
 
 LABEL "bitcoin-source"=$SOURCE
 LABEL "bitcoin-version"=$VERSION
+LABEL "bitcoin-configure-args"="$CONFIGURE_ARGS"
 LABEL "git-ref"=${GIT_REF}
 LABEL "git-sha"=${GIT_SHA}
 LABEL "git-repo-url"=${GIT_REPO_URL}
@@ -42,6 +44,7 @@ RUN chmod +x /usr/bin/get-bitcoin && \
     --git-ref "${GIT_REF}" \
     --git-sha "${GIT_SHA}" \
     --git-repo-url "${GIT_REPO_URL}" \
+    --configure-args="${CONFIGURE_ARGS}" \
     --install-prefix /root/bitcoin/ \
     "${SOURCE}"
 
@@ -64,9 +67,11 @@ ARG VERSION=
 ARG GIT_REF=
 ARG GIT_SHA=
 ARG GIT_REPO_URL=
+ARG CONFIGURE_ARGS=
 
 LABEL "bitcoin-source"=$SOURCE
 LABEL "bitcoin-version"=$VERSION
+LABEL "bitcoin-configure-args"="$CONFIGURE_ARGS"
 LABEL "git-ref"=${GIT_REF}
 LABEL "git-sha"=${GIT_SHA}
 LABEL "git-repo-url"=${GIT_REPO_URL}

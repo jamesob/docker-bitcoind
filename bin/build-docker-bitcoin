@@ -21,9 +21,11 @@ DOCKER_USERNAME = "jamesob"
 @cli.main
 def main(
     git_ref: str,
+    configure_args: str = '',
     docker_username: str = DOCKER_USERNAME,
     repo_path: str = str(DEFAULT_REPO_PATH),  # type: ignore
     push: bool = False,
+    tag: str = '',
 ):
     """
     Args:
@@ -65,14 +67,17 @@ def main(
 
     os.chdir(str(fscm.this_dir_path().parent))
 
-    tags = [
-        f"{docker_username}/bitcoind:{git_ref}",
-        f"{docker_username}/bitcoind:{sha}",
-    ]
-    if git_ref == "master":
-        tags.append(f"{docker_username}/bitcoind:master-latest")
+    if tag:
+        tags = [tag]
+    else:
+        tags = [
+            f"{docker_username}/bitcoind:{git_ref}",
+            f"{docker_username}/bitcoind:{sha}",
+        ]
+        if git_ref == "master":
+            tags.append(f"{docker_username}/bitcoind:master-latest")
 
-    tag_str = " ".join(f"-t {tag}" for tag in tags)
+    tag_str = " ".join(f"-t {t}" for t in tags)
 
     run(
         f"docker build {tag_str} "
@@ -80,6 +85,7 @@ def main(
         f'--build-arg "VERSION=git:{git_ref}" '
         f'--build-arg "GIT_REF={git_ref}" '
         f'--build-arg "GIT_SHA={sha}" '
+        f'--build-arg "CONFIGURE_ARGS={configure_args}" '
         f'--build-arg "GIT_REPO_URL={remote_url}" '
         "."
     )
@@ -94,6 +100,7 @@ def main(
         # Sanity check the labels
         assert labels['bitcoin-source'] == 'git'
         assert labels['bitcoin-version'] == f'git:{git_ref}'
+        assert labels['bitcoin-configure-args'] == configure_args
         assert labels['git-sha'] == sha
         assert labels['git-ref'] == git_ref
         assert labels['git-repo-url'] == remote_url
