@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+
+import json
+import os
+import sys
+from pathlib import Path
+
+import fscm
+from fscm import run
+from clii import App
+
+cli = App()
+
+fscm.settings.run_safe = True
+
+DEFAULT_REPO_PATH = Path.home() / "src" / "bitcoin-reference"
+REPO_URL = "https://github.com/bitcoin/bitcoin"
+DOCKER_USERNAME = "jamesob"
+
+
+@cli.main
+def main(
+    git_ref: str,
+    docker_username: str = DOCKER_USERNAME,
+    repo_path: str = str(DEFAULT_REPO_PATH),  # type: ignore
+    push: bool = False,
+):
+    """
+    Args:
+        git_ref: the git ref to build, e.g. "master" or "jamesob/utxo-dumpload-compressed"
+
+    Kwargs:
+        docker_repo_name: the docker username to push the container into
+        repo_path: where the cached bitcoin repo will live
+    """
+    repo_path: Path = Path(repo_path)
+    if not repo_path.exists():
+        run(f"git clone {REPO_URL} {repo_path}")
+
+    remote = "origin"
+    if "/" in git_ref:
+        remote, git_ref = git_ref.split("/", 1)
+
+    remote_url = "https://github.com/bitcoin/bitcoin"
+    if remote != "origin":
+        remote_url = f"https://github.com/{remote}/bitcoin"
+
+    os.chdir(repo_path)
+
+    remotes = {l.split()[0] for l in run("git remote -v", q=True).stdout.splitlines()}
+
+    if remote not in remotes:
+        run(f"git remote add {remote} https://github.com/{remote}/bitcoin")
+        print(f"Added remote {remote}")
+
+    run("git fetch --all", q=True)
+
+    try:
+        sha = run(f"git rev-list -n 1 {remote}/{git_ref}", q=True).stdout.strip()
+    except fscm.CommandFailure:
+        # Try a tag
+        sha = run(f"git rev-list -n 1 {git_ref}", q=True).stdout.strip()
+
+    print(f"Resolved git ref {remote}/{git_ref} to {sha}")
+
+    os.chdir(str(fscm.this_dir_path().parent))
+
+    tags = [
+        f"{docker_username}/bitcoind:{git_ref}",
+        f"{docker_username}/bitcoind:{sha}",
+    ]
+    if git_ref == "master":
+        tags.append(f"{docker_username}/bitcoind:master-latest")
+
+    tag_str = " ".join(f"-t {tag}" for tag in tags)
+
+    run(
+        f"docker build {tag_str} "
+        '--build-arg "SOURCE=git" '
+        f'--build-arg "VERSION=git:{git_ref}" '
+        f'--build-arg "GIT_REF={git_ref}" '
+        f'--build-arg "GIT_SHA={sha}" '
+        f'--build-arg "GIT_REPO_URL={remote_url}" '
+        "."
+    )
+
+    print(f"Built container for {remote}/{git_ref} ({sha}) as {tags[0]}")
+
+    labels = json.loads(run(f"docker image inspect {tags[0]}", q=True).stdout)[0][
+        "Config"
+    ]["Labels"]
+
+    try:
+        # Sanity check the labels
+        assert labels['bitcoin-source'] == 'git'
+        assert labels['bitcoin-version'] == f'git:{git_ref}'
+        assert labels['git-sha'] == sha
+        assert labels['git-ref'] == git_ref
+        assert labels['git-repo-url'] == remote_url
+    except AssertionError:
+        print(f"Labels mismatch; expected {labels}")
+        sys.exit(1)
+
+    if push:
+        run("docker login docker.io")
+        for tag in tags:
+            run(f"docker push {tag}")
+
+
+if __name__ == "__main__":
+    cli.run()

@@ -39,6 +39,13 @@ err() {
   >&2 echo "$@"
 }
 
+err "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+err ""
+err "THIS SCRIPT IS DEPRECATED AND UNMAINTAINED. See ./bin/get-bitcoin."
+err ""
+err "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
+
 if [ ! -f /etc/debian_version ] && [ ! -f /etc/lsb_release ]; then
   err "This script is intended for use on Debian-based systems."
   exit 1

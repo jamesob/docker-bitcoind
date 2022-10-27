@@ -8,6 +8,8 @@ A Docker configuration with sane defaults for running a fully-validating
 Bitcoin node. Binaries are retrieved from bitcoincore.org and verified for integrity
 based on [the process described here](https://bitcoincore.org/en/download/).
 
+Optional building from arbitrary git objects is possible (and pretty convenient).
+
 ## **Warning**: don't trust the Docker registry
 
 References on the Docker registry (https://hub.docker.com) are mutable. A malicious
@@ -19,6 +21,25 @@ Or just build these images yourself.
 
 With most software this doesn't matter too much, but running an authentic copy of
 Bitcoin Core is really important!
+
+## **Warning**: don't trust Docker
+
+Consider whether your use of Bitcoin requires Docker. When you use a container runtime,
+you are using a lot of additional code written by other people, e.g. `runc`, `docker`,
+potentially `docker-compose`, potentially `podman`.
+
+Is it necessary to rely on these dependencies? More code running underneath bitcoind
+is more chance for someone to meddle with the operation of your node.
+
+## **Warning**: don't rely on Dockerfile particulars
+
+This repo may change Dockerfile implementation. Although the container interface itself
+(i.e. volume mounts, operational behavior) will remain stable, the implementation 
+of how that happens is subject to change.
+
+If your use relies on the particulars of, for example, the retrieval script
+(`get-bitcoin.sh`), please pin your usage of this repo to a particular git hash.
+
 
 ## Tags available
 
@@ -37,7 +58,31 @@ Bitcoin Core is really important!
 - 0.19.0
 - 0.19.1
 - 0.20.0
-- 0.20.1 (latest)
+- 0.20.1 
+- 0.21.0 
+- 0.21.1 
+- 0.21.2 
+- 22.0
+- 23.0
+
+As well as various git refs.
+
+
+## Labels available
+
+Each image is built with certain labels:
+
+- `bitcoin_source`: "release" or "git", depending on how the binaries were built
+- `bitcoin_version`: if source=release, the release version (e.g. `23.0`), if
+  source=git "git:<git ref>"
+- `git_ref`: if source=git, the tag or branch used to build the image
+- `git_sha`: if source=git, the specific git commit hash
+- `git_repo_url`: if source=git, the repo used to build
+
+Labels can be shown by running something like
+```sh
+% docker image inspect jamesob/bitcoind:22.0 | jq '.[0] .Config .Labels'
+```
 
 ## Quick start
 
@@ -97,7 +142,16 @@ $ docker build -t $YOUR_USER/bitcoind:$SOME_VERSION \
    --build-arg UID=$(id -u) \
    --build-arg GID=$(id -g) \
    --build-arg VERSION=$SOME_VERSION \
+   --build-arg SOURCE=release \
    .
+```
+
+To build an arbitrary git object:
+
+```
+$ ./bin/build-docker-bitcoin master
+$ ./bin/build-docker-bitcoin v24.0rc2
+$ ./bin/build-docker-bitcoin <some git object>
 ```
 
 ## Possible volume mounts

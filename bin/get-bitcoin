@@ -1,0 +1,208 @@
+#!/usr/bin/env python3
+# vim: ft=python
+"""
+A script for obtaining Bitcoin Core binaries, either from a release or building
+from source.
+
+"""
+
+import argparse
+import sys
+import os
+import subprocess
+from pathlib import Path
+
+
+def sh(cmd, *args, **kwargs):
+    kwargs.setdefault("shell", True)
+    kwargs.setdefault("check", True)
+    kwargs.setdefault("text", True)
+    return subprocess.run(cmd, *args, **kwargs)
+
+
+def err(*args, **kwargs):
+    kwargs["file"] = sys.stderr
+    print(*args, **kwargs)
+
+
+RELEASE_VERSIONS = (
+    "0.13.0",
+    "0.13.1",
+    "0.13.2",
+    "0.14.3",
+    "0.15.2",
+    "0.16.3",
+    "0.17.0",
+    "0.17.0.1",
+    "0.17.1",
+    "0.17.2",
+    "0.18.0",
+    "0.18.1",
+    "0.19.0.1",
+    "0.19.1",
+    "0.20.0",
+    "0.20.1",
+    "0.20.2",
+    "0.21.0",
+    "0.21.1",
+    "0.21.2",
+    "22.0",
+    "23.0",
+)
+
+
+def prechecks():
+    if not (Path("/etc/debian_version").exists() or Path("/etc/lsb_release").exists()):
+        err("This script is intended for use on Debian-based systems.")
+        sys.exit(3)
+
+
+def from_release(version: str, install_prefix: str):
+    if version not in RELEASE_VERSIONS:
+        versions = "\n".join(f"  {v}" for v in RELEASE_VERSIONS)
+        err(f"Version {version} not available. Choose from:\n\n{versions}")
+        sys.exit(2)
+
+    URL_BASE = f"https://bitcoincore.org/bin/bitcoin-core-{version}"
+    FILENAME = f"bitcoin-{version}-x86_64-linux-gnu.tar.gz"
+
+    # Verify signing key fingerprints here:
+    #
+    #   https://github.com/bitcoin/bitcoin/tree/master/contrib/builder-keys
+
+    sh(f'curl -O "{URL_BASE}/SHA256SUMS.asc"')
+    sh(f'curl -O "{URL_BASE}/{FILENAME}"')
+
+    vertuple = tuple(int(i) for i in version.split("."))
+
+    if vertuple < (22, 0):
+        # In version 22.0, release signing changed from a single key signing in
+        # SHA256SUMS.asc to multiple keys signing SHA256SUMS.
+        #
+        # See here for more information: https://github.com/bitcoin/bitcoin/pull/23020
+
+        sh(
+            "gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys "
+            "01EA5486DE18A882D4C2684590C8019E36C2E964"
+        )
+        sh(
+            "sha256sum --ignore-missing --check SHA256SUMS.asc "
+            f' | tee - | grep -o "{FILENAME}: OK"'
+        )
+        sh("gpg --verify SHA256SUMS.asc >gpg_verify_out 2>&1")
+        sh("grep '^gpg: Good signature from \"Wladimir J. van der Laan' gpg_verify_out")
+        sh(
+            "grep '^Primary key fingerprint: 01EA 5486 DE18 A882 D4C2  6845 90C8 019E 36C2 E964' "
+            "gpg_verify_out"
+        )
+    else:
+        # See bitcoin/contrib/builder-keys/keys.txt for current values.
+        #
+        # I've chosen a subset of builder keys here who are well-known and reliably
+        # sign for releases.
+
+        KEYS = (
+            # Wladimir
+            "71A3B16735405025D447E8F274810B012346C9A6",
+            # Hebasto
+            "D1DBF2C4B96F2DEBF4C16654410108112E7EA81F",
+            # Fanquake
+            "E777299FC265DD04793070EB944D35F9AC3DB76A",
+        )
+
+        for key in KEYS:
+            sh(f"gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys {key}")
+
+        VERIFY = {
+            "Wladimir J. van der Laan": "71A3 B167 3540 5025 D447  E8F2 7481 0B01 2346 C9A6",
+            "Hennadii Stepanov": "D1DB F2C4 B96F 2DEB F4C1  6654 4101 0811 2E7E A81F",
+            "Michael Ford": "E777 299F C265 DD04 7930  70EB 944D 35F9 AC3D B76A",
+        }
+
+        sh(f'curl -O "{URL_BASE}/SHA256SUMS"')
+        sh("gpg --verify SHA256SUMS.asc SHA256SUMS >gpg_verify_out 2>&1 || true")
+        sh("cat gpg_verify_out")
+
+        for name, fp in VERIFY.items():
+            sh(f"grep '^gpg: Good signature from \"{name}' gpg_verify_out")
+            sh(f"grep '^Primary key fingerprint: {fp}' gpg_verify_out")
+
+        sh(
+            f'sha256sum --ignore-missing --check SHA256SUMS | tee - | grep -o "{FILENAME}: OK"'
+        )
+
+    sh(f"tar -xzvf {FILENAME}")
+    dir = sh("find . -name 'bitcoin-*' -type d | head -n 1", capture_output=True).stdout.strip()
+    sh(f"ls -lah {dir}")
+    sh(f"rm {dir}/bin/bitcoin-qt")
+    sh(f"cp -r {dir}/* {install_prefix}")
+
+    print("\nBitcoin installed:\n")
+    sh(f"{install_prefix}/bin/bitcoind --version")
+
+
+def from_git(
+    gitref: str, gitsha: str, repo_url: str, configure_args: str, install_prefix: str
+):
+    sh(f"git clone {repo_url} /bitcoin")
+    os.chdir("/bitcoin")
+    sh(f"git checkout {gitref}")
+
+    gotsha = sh("git rev-list -n 1 HEAD", capture_output=True).stdout.strip()
+    if gotsha != gitsha:
+        err(f"Git SHA doesn't match: got '{gotsha}', expected '{gitsha}'")
+        sys.exit(2)
+
+    sh("./contrib/install_db4.sh .")
+    sh("./autogen.sh")
+    sh(
+        './configure BDB_LIBS="-L/bitcoin/db4/lib -ldb_cxx-4.8" '
+        f'BDB_CFLAGS="-I/bitcoin/db4/include" {configure_args}'
+    )
+    sh("make -j $(nproc --ignore 1)")
+    sh(f"mkdir -p {install_prefix}/bin")
+    sh(
+        "cp src/bitcoind src/bitcoin-cli src/bitcoin-tx src/bitcoin-util "
+        f"src/bitcoin-wallet src/test/test_bitcoin {install_prefix}/bin"
+    )
+
+
+def getparser():
+    ap = argparse.ArgumentParser()
+    ao = ap.add_argument
+
+    ao("source", help='either "release" or "git"')
+    ao("--install-prefix", help="where to move the binaries", default=".")
+
+    ao(
+        "--version",
+        help="if obtaining from release, which version to obtain",
+        default="",
+    )
+
+    ao("--git-ref", help="if obtaining from git, which tag/branch to build", default="")
+    ao("--git-sha", help="if obtaining from git, which commit to build", default="")
+    ao("--git-repo-url", default="https://github.com/bitcoin/bitcoin")
+    ao("--configure-args", help="pass additiona ./configure args", default="")
+
+    return ap
+
+
+if __name__ == "__main__":
+    parser = getparser()
+    args = parser.parse_args()
+    prechecks()
+
+    if args.source == "release":
+        from_release(args.version, args.install_prefix)
+    elif args.source == "git":
+        from_git(
+            args.git_ref,
+            args.git_sha,
+            args.git_repo_url,
+            args.configure_args,
+            args.install_prefix,
+        )
+    else:
+        err(f"source '{args.source}' unrecognized. choices: release, git")
+        sys.exit(1)
