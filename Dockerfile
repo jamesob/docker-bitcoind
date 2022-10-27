@@ -1,17 +1,49 @@
 FROM buildpack-deps:buster-curl as builder
 LABEL MAINTAINER="James O'Beirne <wild-dockerbitcoind@au92.org>"
 
-# This buildarg can be set during container build time with --build-arg VERSION=[version]
-ARG VERSION=0.20.1
+# These buildargs can be set during container build time with e.g.
+# --build-arg VERSION=[version]
+
+# Can be "release" or "git"
+ARG SOURCE=
+# If SOURCE is git, this should be blank.
+ARG VERSION=
+
+ARG GIT_REF=
+ARG GIT_SHA=
+ARG GIT_REPO_URL=
+
+LABEL "bitcoin-source"=$SOURCE
+LABEL "bitcoin-version"=$VERSION
+LABEL "git-ref"=${GIT_REF}
+LABEL "git-sha"=${GIT_SHA}
+LABEL "git-repo-url"=${GIT_REPO_URL}
+
+ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update && \
-  apt-get install -y gnupg2 curl && \
+  apt-get install -y gnupg2 curl sudo python3 && \
   rm -rf /var/lib/apt/lists/*
 
-COPY ./bin/get-bitcoin.sh /usr/bin/
-RUN chmod +x /usr/bin/get-bitcoin.sh && \
+# Install build deps, if necessary.
+RUN if [ "${SOURCE}" = "git" ] ; then apt-get update && \
+  apt-get install -y \
+    git build-essential libtool autotools-dev automake \
+    pkg-config bsdmainutils libevent-dev libboost-dev libsqlite3-dev \
+    systemtap-sdt-dev libzmq3-dev g++ && \
+  rm -rf /var/lib/apt/lists/* ; fi
+
+
+COPY ./bin/get-bitcoin /usr/bin/
+RUN chmod +x /usr/bin/get-bitcoin && \
   mkdir /root/bitcoin && \
-  get-bitcoin.sh $VERSION /root/bitcoin/
+  get-bitcoin \
+    --version "${VERSION}" \
+    --git-ref "${GIT_REF}" \
+    --git-sha "${GIT_SHA}" \
+    --git-repo-url "${GIT_REPO_URL}" \
+    --install-prefix /root/bitcoin/ \
+    "${SOURCE}"
 
 
 FROM debian:buster-slim
@@ -24,9 +56,31 @@ ARG UID=1000
 ARG GID=1000
 ARG USERNAME=user
 
+# Can be "release" or "git"
+ARG SOURCE=
+# If SOURCE is git, this should be blank.
+ARG VERSION=
+
+ARG GIT_REF=
+ARG GIT_SHA=
+ARG GIT_REPO_URL=
+
+LABEL "bitcoin-source"=$SOURCE
+LABEL "bitcoin-version"=$VERSION
+LABEL "git-ref"=${GIT_REF}
+LABEL "git-sha"=${GIT_SHA}
+LABEL "git-repo-url"=${GIT_REPO_URL}
+
 RUN apt-get update && \
-  apt-get install -y iproute2 sudo && \
+  apt-get install -y iproute2 sudo libevent-pthreads-2.1-6 libzmq5 libsqlite3-0 && \
   rm -rf /var/lib/apt/lists/*
+
+# Install shared library requirements if we aren't using release binaries
+RUN if [ "${SOURCE}" = "git" ]; then \
+  apt update && apt install -y \
+  libevent-2.1-6 libevent-pthreads-2.1-6 libzmq5 libsqlite3-0 && \
+  rm -rf /var/lib/apt/lists/* \
+  ; fi
 
 # Workaround to address https://github.com/jamesob/docker-bitcoind/pull/16 while
 # still not running as root user.
