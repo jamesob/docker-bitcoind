@@ -80,9 +80,10 @@ Each image is built with certain labels:
 - `git_repo_url`: if source=git, the repo used to build
 
 Labels can be shown by running something like
-```json
+```sh
 % docker image inspect jamesob/bitcoind:master | jq '.[0] .Config .Labels'
-
+```
+```json
 {
   "bitcoin-configure-args": "--enable-reduce-exports --disable-bench --disable-gui-tests --disable-fuzz-binary --disable-ccache --disable-maintainer-mode --disable-dependency-tracking CFLAGS='-O2 -g'",
   "bitcoin-source": "git",
