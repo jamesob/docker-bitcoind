@@ -3,6 +3,8 @@
 import json
 import os
 import sys
+import importlib.util
+from functools import lru_cache
 from pathlib import Path
 
 import fscm
@@ -21,20 +23,27 @@ DOCKER_USERNAME = "jamesob"
 DEFAULT_CONFIG_ARGS = (
     "--enable-reduce-exports --disable-bench --disable-gui-tests --disable-fuzz-binary "
     "--disable-ccache --disable-maintainer-mode --disable-dependency-tracking "
-    "CFLAGS='-O2 -g'"
+    # Guix usually includes `-g` here and manually strips debug symbols.
+    "CFLAGS='-O2'"
 )
 
 
-@cli.main
-def main(
+@lru_cache
+def docker_login():
+    run("docker login docker.io")
+
+
+@cli.cmd
+def git(
     git_ref: str,
     configure_args: str = DEFAULT_CONFIG_ARGS,
     docker_username: str = DOCKER_USERNAME,
     repo_path: str = str(DEFAULT_REPO_PATH),  # type: ignore
     push: bool = False,
-    tag: str = '',
+    tag: str = "",
 ):
     """
+    Build a container image from the git repository.
     Args:
         git_ref: the git ref to build, e.g. "master" or "jamesob/utxo-dumpload-compressed"
 
@@ -105,20 +114,60 @@ def main(
 
     try:
         # Sanity check the labels
-        assert labels['bitcoin-source'] == 'git'
-        assert labels['bitcoin-version'] == f'git:{git_ref}'
-        assert labels['bitcoin-configure-args'] == configure_args
-        assert labels['git-sha'] == sha
-        assert labels['git-ref'] == git_ref
-        assert labels['git-repo-url'] == remote_url
+        assert labels["bitcoin-source"] == "git"
+        assert labels["bitcoin-version"] == f"git:{git_ref}"
+        assert labels["bitcoin-configure-args"] == configure_args
+        assert labels["git-sha"] == sha
+        assert labels["git-ref"] == git_ref
+        assert labels["git-repo-url"] == remote_url
     except AssertionError:
         print(f"Labels mismatch; expected {labels}")
         sys.exit(1)
 
     if push:
-        run("docker login docker.io")
+        docker_login()
         for tag in tags:
             run(f"docker push {tag}")
+
+    return tags[0]
+
+
+@cli.cmd
+def release(version: str, push: bool = False, tag: str = ""):
+    """
+    Build a container image from a bitcoincore.org release.
+    """
+    tag = tag or f"jamesob/bitcoind:{version}"
+    run(
+        f'docker build -t "{tag}" '
+        '--build-arg "SOURCE=release" '
+        f'--build-arg "VERSION={version}" '
+        "."
+    )
+
+    if push:
+        docker_login()
+        run(f"docker push {tag}")
+
+    return tag
+
+
+@cli.cmd
+def all_releases(after_version: str = ""):
+    """
+    Build a container for all releases
+    """
+    gb = fscm.this_dir_path() / "get-bitcoin"
+    spec = importlib.util.spec_from_loader("getbitcoin", loader=None)
+    assert spec
+    getbitcoin = importlib.util.module_from_spec(spec)
+    exec(gb.read_text(), getbitcoin.__dict__)
+
+    for ver in getbitcoin.RELEASE_VERSIONS:
+        if after_version and ver < after_version:
+            continue
+
+        release(ver, push=True)
 
 
 if __name__ == "__main__":

@@ -3,7 +3,6 @@
 """
 A script for obtaining Bitcoin Core binaries, either from a release or building
 from source.
-
 """
 
 import argparse
@@ -63,6 +62,7 @@ def from_release(version: str, install_prefix: str):
         err(f"Version {version} not available. Choose from:\n\n{versions}")
         sys.exit(2)
 
+    prechecks()
     URL_BASE = f"https://bitcoincore.org/bin/bitcoin-core-{version}"
     FILENAME = f"bitcoin-{version}-x86_64-linux-gnu.tar.gz"
 
@@ -140,8 +140,18 @@ def from_release(version: str, install_prefix: str):
     sh(f"cp -r {dir}/* {install_prefix}")
 
     print("\nBitcoin installed:\n")
-    sh(f"{install_prefix}/bin/bitcoind --version")
 
+    check = True
+    if vertuple < (0, 14):
+        check = False
+
+    verout = sh(
+        f"{install_prefix}/bin/bitcoind -version",
+        check=check,
+        capture_output=True,
+    ).stdout
+    assert " version " in verout
+    assert version in verout
 
 
 def from_git(
@@ -194,7 +204,6 @@ def getparser():
 if __name__ == "__main__":
     parser = getparser()
     args = parser.parse_args()
-    prechecks()
 
     if args.source == "release":
         from_release(args.version, args.install_prefix)
