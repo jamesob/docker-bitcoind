@@ -15,7 +15,7 @@ RUN apt-get update && \
 # Install build deps, if necessary.
 RUN if [ "${SOURCE}" = "git" ] ; then apt-get update && \
   apt-get install -y \
-    git build-essential libtool autotools-dev automake \
+    git build-essential libtool autotools-dev automake binutils \
     pkg-config bsdmainutils libevent-dev libboost-dev libsqlite3-dev \
     systemtap-sdt-dev libzmq3-dev g++ && \
   rm -rf /var/lib/apt/lists/* ; fi

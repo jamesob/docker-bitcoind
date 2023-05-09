@@ -155,7 +155,12 @@ def from_release(version: str, install_prefix: str):
 
 
 def from_git(
-    gitref: str, gitsha: str, repo_url: str, configure_args: str, install_prefix: str
+    gitref: str,
+    gitsha: str,
+    repo_url: str,
+    configure_args: str,
+    install_prefix: str,
+    no_strip_binaries: bool = False,
 ):
     sh(f"git clone {repo_url} /bitcoin")
     os.chdir("/bitcoin")
@@ -166,18 +171,20 @@ def from_git(
         err(f"Git SHA doesn't match: got '{gotsha}', expected '{gitsha}'")
         sys.exit(2)
 
-    sh("./contrib/install_db4.sh .")
     sh("./autogen.sh")
-    sh(
-        './configure BDB_LIBS="-L/bitcoin/db4/lib -ldb_cxx-4.8" '
-        f'BDB_CFLAGS="-I/bitcoin/db4/include" {configure_args}'
-    )
+    sh(f'./configure {configure_args}')
     sh("make -j $(nproc --ignore 1)")
     sh(f"mkdir -p {install_prefix}/bin")
     sh(
         "cp src/bitcoind src/bitcoin-cli src/bitcoin-tx src/bitcoin-util "
         f"src/bitcoin-wallet src/test/test_bitcoin {install_prefix}/bin"
     )
+
+    if not no_strip_binaries:
+        binpath = Path(install_prefix) / "bin"
+        os.chdir(binpath)
+        for p in binpath.glob("*"):
+            sh(f"strip --enable-deterministic-archives -p -s {p.name}")
 
 
 def getparser():

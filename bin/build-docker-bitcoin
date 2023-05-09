@@ -58,6 +58,8 @@ def git(
     remote = "origin"
     if "/" in git_ref:
         remote, git_ref = git_ref.split("/", 1)
+    elif ':' in git_ref:
+        remote, git_ref = git_ref.split(":", 1)
 
     remote_url = "https://github.com/bitcoin/bitcoin"
     if remote != "origin":
